@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>驾校宝典</title>
+    <style>
+        body {
+            padding-bottom: 100px;
+        }
+
+        .box {
+            margin-left: 200px;
+        }
+
+        .title {
+            width: 50%;
+        }
+
+        .now {
+            display: none !important;
+        }
+
+        .page {
+            margin-left: 400px;
+            margin-top: 100px;
+        }
+
+        .li {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #000;
+            float: left;
+            margin-left: 10px;
+            text-align: center;
+        }
+
+        .li.bg {
+            background-color: cornflowerblue;
+        }
+        .hidden{
+         display: none;
+        }
+        .right{
+            color:green;
+        }
+        .error{
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<div class="box"></div>
+<div class="page"></div>
+<script type="text/html" id="tpl">
+    {{each data as value index}}
+    <div class="title">
+        <h4>第{{page*10+index+1}}题：{{value.question}}</h4>
+        <img src="{{value.url}}" alt="">
+        <p><input type="radio" name="{{index}}" value="A" title="" >A:{{value.item1}}
+        </p>
+        <p>
+            <input type="radio" name="{{index}}" value="B" title="">B:{{value.item2}}</p>
+        <p class="{{value.item3===''?'now':''}}">
+            <input type="radio" name="{{index}}" value="C" title="">C:{{value.item3}}</p>
+        <p class="{{value.item4===''?'now':''}}">
+            <input type="radio" name="{{index}}" value="D" title="">D:{{value.item4}}</p>
+        <p class="hidden">解析：{{value.explains}}</p>
+        <p class="hidden">答案：<span style="color: red;">{{value.answer}}</span></p>
+    </div>
+    {{/each}}
+</script>
+<script type="text/html" id="tpl2">
+    <% for(var i=0;i
+    <data;i++){ %>
+    <div class="{{i===0?'li bg':'li'}}">{{i+1}}</div>
+    <%}%>
+</script>
+<script src="template-web.js"></script>
+<script src="js/jquery.js"></script>
+<script>
+    $(function () {
+//        获取数据
+        $.ajax({
+            type: "GET",
+            url: "http://v.juhe.cn/jztk/query",
+            data: {
+                key: "0010d4b5c7a236e82e503eb5827a0aae",
+                subject: 1, //1代表科目一 4代表科目四
+                model: "c1"
+            },
+            dataType: "JSONP",
+            success: function (data) {
+                console.log(data);
+//                将答案转化成ABC
+                for (let i = 0; i < data.result.length; i++) {
+                    if (data.result[i].answer === '1') {
+                        data.result[i].answer = 'A';
+                    } else if (data.result[i].answer === '2') {
+                        data.result[i].answer = 'B';
+                    } else if (data.result[i].answer === '3') {
+                        data.result[i].answer = 'C';
+                    } else if (data.result[i].answer === '4') {
+                        data.result[i].answer = 'D';
+                    }
+                }
+
+
+
+//                分页
+                getRander(0, data); //调用渲染函数
+
+//                渲染页数
+                let num = 10;   //每页显示数
+                let count = Math.ceil(data.result.length / num); //页数
+                let html2 = template("tpl2", {data: count});
+                $(".page").html(html2);
+
+
+
+                for (let i = 0; i < $('.li').length; i++) {
+                    $(".li").eq(i).click(function () {
+                        $(".li").eq(i).addClass("bg").siblings().removeClass("bg");
+                        getRander(i, data); //调用渲染函数
+                    })
+                }
+            }
+        });
+
+
+//        渲染函数
+        let getRander = function (i, data) {
+            let datas = data.result.slice(i * 10, (i + 1) * 10);
+            let one = {data: datas};
+            one.page = i;
+            let html = template("tpl", one);
+            $(".box").html(html);
+
+//            点击判断对错
+            for (let i = 0; i < $(".title").length; i++) {
+                for (let j = 0; j < $(".title").eq(i).find("input").length; j++) {
+                    $(".title").eq(i).find("input").eq(j).click(function () {
+                        if($(this).val()===$(".title").eq(i).find("p span").html()) {
+                            $(this).parent().addClass("right");
+                            $(".title").eq(i).find("p").show();
+                            $(".title").eq(i).find('input').attr("disabled",'disabled');
+                        }
+                        else{
+                            $(this).parent().addClass("error");
+                            $(".title").eq(i).find("p").show();
+                            $(".title").eq(i).find('input').attr("disabled",'disabled');
+                        }
+                    })
+                }
+            }
+        }
+    })
+</script>
+</body>
+</html>
